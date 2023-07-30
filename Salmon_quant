@@ -18,6 +18,9 @@ module load bioinformatics
 module load salmon/1.10.1
 
 # THis is to qunatify the reads
+# quant.sf is the file that has the info
+# The file that you need downstream from the salmon quant output is the quant.sf file. This file contains the quantification information for the transcripts in your sample. It provides information such as the transcript IDs, their lengths, effective lengths, estimated counts, and TPM (Transcripts Per Million) values. 
+#This file is commonly used for downstream analyses such as differential gene expression analysis and other transcriptomic analyses.
 
 
 #salmon quant -i index -l IU -1 lib_1_1.fq lib_2_1.fq -2 lib_1_2.fq lib_2_2.fq --validateMappings -o out
