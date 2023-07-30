@@ -1,0 +1,34 @@
+#!/bin/bash
+
+#SBATCH -p shared
+#SBATCH -c 100
+#SBATCH --mem=50G
+#SBATCH --gres=tmp:400G
+#SBATCH -t 71:59:00
+
+
+cd /nobackup/qkdf72/Trinity/Reads/Trimmed
+
+export LD_PRELOAD=/nobackup/dbl0hpc/apps/miniconda3/envs/LazyB/lib/libjemalloc.so.2
+
+module purge
+
+module load bioinformatics
+
+module load salmon/1.10.1
+
+# THis is to qunatify the reads
+
+
+#salmon quant -i index -l IU -1 lib_1_1.fq lib_2_1.fq -2 lib_1_2.fq lib_2_2.fq --validateMappings -o out
+
+salmon quant -i salmon_index -l A \
+-1 M.bP1-17-25_CCAATTAGGC-CATGTCGAGG_L001_R1_001.fastq.gz M.bP1-23_b-31_b_AAGGTGTTAG-TGTGCTGGTG_L001_R1_001.fastq.gz \
+   M.bP1-27-35_TCCGCGAGTA-CGCTGAATGC_L001_R1_001.fastq.gz M.bP1-20-28_CATCAGGCGT-CGTGTTACCG_L001_R1_001.fastq.gz \
+   M.bP1-22-30_CTTACTCTCT-CTGCTTAAGG_L001_R1_001.fastq.gz M.bP1-25-33_CAGGACCAAT-GCGGATATTA_L001_R1_001.fastq.gz \
+   M.bP1-3-6_CGACTAACGT-ATCAGCAGCA_L001_R1_001.fastq.gz M.bP1-2-4_TCGGACAACG-GTCTGGATGG_L001_R1_001.fastq.gz \
+-2 M.bP1-17-25_CCAATTAGGC-CATGTCGAGG_L001_R2_001.fastq.gz M.bP1-23_b-31_b_AAGGTGTTAG-TGTGCTGGTG_L001_R2_001.fastq.gz \
+   M.bP1-27-35_TCCGCGAGTA-CGCTGAATGC_L001_R2_001.fastq.gz M.bP1-20-28_CATCAGGCGT-CGTGTTACCG_L001_R2_001.fastq.gz \
+   M.bP1-22-30_CTTACTCTCT-CTGCTTAAGG_L001_R2_001.fastq.gz M.bP1-25-33_CAGGACCAAT-GCGGATATTA_L001_R2_001.fastq.gz \
+   M.bP1-3-6_CGACTAACGT-ATCAGCAGCA_L001_R2_001.fastq.gz M.bP1-2-4_TCGGACAACG-GTCTGGATGG_L001_R2_001.fastq.gz \
+-p 50 --validateMappings -o out_put
