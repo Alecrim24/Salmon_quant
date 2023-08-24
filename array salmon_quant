@@ -1,0 +1,41 @@
+#!/bin/bash
+#SBATCH -p shared # You select the queue(cluster) here
+#SBATCH -c 100               # number of CPU cores to allocate, one per thread, up to 128.
+#SBATCH --mem=200G           # memory required, up to 250G.
+#SBATCH --gres=tmp:300G      # $TMPDIR space required on each compute node, up to 400G.
+#SBATCH -t 15:00:00     # time limit in format dd-hh:mm:ss
+#SBATCH --job-name=S16_salmon_read_count # This name will let you follow your job
+#SBATCH --output=S16_salmon_read_count_%A_%a.out # 
+#SBATCH --error=S16_salmon_read_count_%A_%a.err # error file tells you whats wrong
+#SBATCH --array=1-24 # because i have 24 samples
+
+
+module load bioinformatics
+module load salmon
+
+fa_dir=/nobackup/qkdf72/Trinity/Reads/All-H.m-reads/Trimmed
+index_dir=/nobackup/qkdf72/Trinity/Reads/All-H.m-reads/Trimmed # where the index is located
+data_dir=/nobackup/qkdf72/Trinity/Reads/All-H.m-reads/Trimmed # where the samples (contaning reads) is located
+output_dir=/nobackup/qkdf72/Trinity/Reads/All-H.m-reads/Trimmed # where the output of each sample will be stored
+
+if [ ! -d $output_dir ]
+then
+    mkdir $output_dir
+fi
+
+# an array
+i=$(expr $SLURM_ARRAY_TASK_ID)
+sample=$(head -$i list_samples | tail -1 )
+
+echo $sample
+cd ${data_dir}
+
+module load bioinformatics
+module load salmon
+salmon quant -i salmon_index -l A \
+    -1 ${sample}1.fastq.gz \
+    -2 ${sample}2.fastq.gz \
+    -p 10 --gcBias \
+    --validateMappings \
+    -o ${output_dir}/${sample}
+#runtime  00:17:49
