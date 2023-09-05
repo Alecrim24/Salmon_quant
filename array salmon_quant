@@ -44,5 +44,7 @@ for i in "${!left_files[@]}"; do
     sample=$(basename "$left_file" "_L002_R1.fastq.gz")
 
     # Run Salmon quant with the current read files
+    # salmon quant -i index -l IU -1 lib_1_1.fq lib_2_1.fq -2 lib_1_2.fq lib_2_2.fq --validateMappings -o out
+    # -1 means left -2 means right
     salmon quant -i "$salmon_index" -l IU -1 "$fastq_dir/$left_file" -2 "$fastq_dir/$right_file" --validateMappings -o "salmon_out_again/${sample}_quant"
 done
