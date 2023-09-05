@@ -1,41 +1,48 @@
+
 #!/bin/bash
-#SBATCH -p shared # You select the queue(cluster) here
-#SBATCH -c 100               # number of CPU cores to allocate, one per thread, up to 128.
-#SBATCH --mem=200G           # memory required, up to 250G.
-#SBATCH --gres=tmp:300G      # $TMPDIR space required on each compute node, up to 400G.
-#SBATCH -t 15:00:00     # time limit in format dd-hh:mm:ss
-#SBATCH --job-name=S16_salmon_read_count # This name will let you follow your job
-#SBATCH --output=S16_salmon_read_count_%A_%a.out # 
-#SBATCH --error=S16_salmon_read_count_%A_%a.err # error file tells you whats wrong
-#SBATCH --array=1-24 # because i have 24 samples
+#SBATCH -p shared
+#SBATCH -c 100
+#SBATCH --mem=200G
+#SBATCH --gres=tmp:300G
+#SBATCH -t 71:00:00
 
-
+module purge
 module load bioinformatics
-module load salmon
+module load salmon/1.10.1
 
-fa_dir=/nobackup/qkdf72/Trinity/Reads/All-H.m-reads/Trimmed
-index_dir=/nobackup/qkdf72/Trinity/Reads/All-H.m-reads/Trimmed # where the index is located
-data_dir=/nobackup/qkdf72/Trinity/Reads/All-H.m-reads/Trimmed # where the samples (contaning reads) is located
-output_dir=/nobackup/qkdf72/Trinity/Reads/All-H.m-reads/Trimmed # where the output of each sample will be stored
+cd /nobackup/qkdf72/Trinity/Reads/All-H.m-reads/Trimmed/
 
-if [ ! -d $output_dir ]
-then
-    mkdir $output_dir
-fi
+# Set the path to the Salmon index
+salmon_index="/nobackup/qkdf72/Trinity/Reads/All-H.m-reads/Trimmed/salmon_index"
 
-# an array
-i=$(expr $SLURM_ARRAY_TASK_ID)
-sample=$(head -$i list_samples | tail -1 )
+# Set the path to the directory containing all the FASTQ files
+fastq_dir="/nobackup/qkdf72/Trinity/Reads/All-H.m-reads/Trimmed"
 
-echo $sample
-cd ${data_dir}
+# Create an array of left and right read files
+left_files=(
+    P1_H.m_1_221020_L002_R1.fastq.gz      P1_H.m_21-29_221020_L002_R1.fastq.gz  P2-4-10_221020_L002_R1.fastq.gz   P2-6-12_221020_L002_R1.fastq.gz   P3_40-48_221020_L002_R1.fastq.gz
+    P1_H.m_15-23_221020_L002_R1.fastq.gz  P1_H.m_24-32_221020_L002_R1.fastq.gz  P2-44-51_221020_L002_R1.fastq.gz  P3_36-44_221020_L002_R1.fastq.gz  P3_41-49_221020_L002_R1.fastq.gz
+    P1_H.m_16-24_221020_L002_R1.fastq.gz  P1_H.m_26-34_221020_L002_R1.fastq.gz  P2-45-54_221020_L002_R1.fastq.gz  P3_37-46_221020_L002_R1.fastq.gz  P3_42-50_221020_L002_R1.fastq.gz
+    P1_H.m_18-26_221020_L002_R1.fastq.gz  P2-10-17_221020_L002_R1.fastq.gz      P2-46-53_221020_L002_R1.fastq.gz  P3_38-45_221020_L002_R1.fastq.gz  P3_43-52_221020_L002_R1.fastq.gz
+    P1_H.m_19-27_221020_L002_R1.fastq.gz  P2-11-18_221020_L002_R1.fastq.gz      P2-5-11_221020_L002_R1.fastq.gz   P3_39-47_221020_L002_R1.fastq.gz
+)
 
-module load bioinformatics
-module load salmon
-salmon quant -i salmon_index -l A \
-    -1 ${sample}1.fastq.gz \
-    -2 ${sample}2.fastq.gz \
-    -p 10 --gcBias \
-    --validateMappings \
-    -o ${output_dir}/${sample}
-#runtime  00:17:49
+right_files=(
+    P1_H.m_1_221020_L002_R2.fastq.gz      P1_H.m_21-29_221020_L002_R2.fastq.gz  P2-4-10_221020_L002_R2.fastq.gz   P2-6-12_221020_L002_R2.fastq.gz   P3_40-48_221020_L002_R2.fastq.gz
+    P1_H.m_15-23_221020_L002_R2.fastq.gz  P1_H.m_24-32_221020_L002_R2.fastq.gz  P2-44-51_221020_L002_R2.fastq.gz  P3_36-44_221020_L002_R2.fastq.gz  P3_41-49_221020_L002_R2.fastq.gz
+    P1_H.m_16-24_221020_L002_R2.fastq.gz  P1_H.m_26-34_221020_L002_R2.fastq.gz  P2-45-54_221020_L002_R2.fastq.gz  P3_37-46_221020_L002_R2.fastq.gz  P3_42-50_221020_L002_R2.fastq.gz
+    P1_H.m_18-26_221020_L002_R2.fastq.gz  P2-10-17_221020_L002_R2.fastq.gz      P2-46-53_221020_L002_R2.fastq.gz  P3_38-45_221020_L002_R2.fastq.gz  P3_43-52_221020_L002_R2.fastq.gz
+    P1_H.m_19-27_221020_L002_R2.fastq.gz  P2-11-18_221020_L002_R2.fastq.gz      P2-5-11_221020_L002_R2.fastq.gz   P3_39-47_221020_L002_R2.fastq.gz
+)
+
+# Loop through the read files and run Salmon quant
+for i in "${!left_files[@]}"; do
+    left_file="${left_files[i]}"
+    right_file="${right_files[i]}"
+
+    # Extract the sample name
+    sample=$(basename "$left_file" "_L002_R1.fastq.gz")
+
+    # Run Salmon quant with the current read files
+    salmon quant -i "$salmon_index" -l IU -1 "$fastq_dir/$left_file" -2 "$fastq_dir/$right_file" --validateMappings -o "salmon_out_again/${sample}_quant"
+done
