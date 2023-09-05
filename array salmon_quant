@@ -12,8 +12,10 @@ module load salmon/1.10.1
 
 # THis is to qunatify the reads
 # quant.sf is the file that has the info
-# The file that you need downstream from the salmon quant output is the quant.sf file. This file contains the quantification information for the transcripts in your sample. It provides information such as the transcript IDs, their lengths, effective lengths, estimated counts, and TPM (Transcripts Per Million) values. 
-#This file is commonly used for downstream analyses such as differential gene expression analysis and other transcriptomic analyses.
+# The file that you need downstream from the salmon quant output is the quant.sf file. This file contains the quantification information for the transcripts in your sample. 
+# It provides information such as the transcript IDs, their lengths, effective lengths, estimated counts, and TPM (Transcripts Per Million) values. 
+# This file is commonly used for downstream analyses such as differential gene expression analysis and other transcriptomic analyses.
+# The transcript names should be the same in all the files - as you will have used the same reference fasta file (that you generated with Trinity?) for quantification. You will get entries for all transcripts in each quant.sf file even if that transcript is not present.
 
 cd /nobackup/qkdf72/Trinity/Reads/All-H.m-reads/Trimmed/
 
