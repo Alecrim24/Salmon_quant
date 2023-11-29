@@ -1,0 +1,78 @@
+#!/bin/bash
+#SBATCH -p shared
+#SBATCH -c 110
+#SBATCH --mem=210G
+#SBATCH --gres=tmp:400G
+#SBATCH -t 71:00:00
+#SBATCH --mail-user=gwhirons-alecrim1@sheffield.ac.uk
+#SBATCH --mail-type=BEGIN,END,FAIL
+
+
+module purge
+module load bioinformatics
+module load salmon/1.10.1
+
+# THis is to qunatify the reads
+# quant.sf is the file that has the info
+# The file that you need downstream from the salmon quant output is the quant.sf file. This file contains the quantification information for the transcripts in your sample.
+# It provides information such as the transcript IDs, their lengths, effective lengths, estimated counts, and TPM (Transcripts Per Million) values.
+# This file is commonly used for downstream analyses such as differential gene expression analysis and other transcriptomic analyses.
+# The transcript names should be the same in all the files - as you will have used the same reference fasta file (that you generated with Trinity?) for quantification. You will get entries for all transcripts in each quant.sf file even if that transcript is not present.
+
+cd /nobackup/qkdf72/Trinity/Reads/All-H.m-reads/Trimmed/
+
+# Set the path to the Salmon index
+salmon_index="/nobackup/qkdf72/Trinity/Reads/All-H.m-reads/Trimmed/transcripts_index_h.m_new"
+
+# Set the path to the directory containing all the FASTQ files
+fastq_dir="/nobackup/qkdf72/Trinity/Reads/All-H.m-reads/Trimmed"
+
+# Create an array of left and right read files
+left_files=(
+    M.bP1-17-25_CCAATTAGGC-CATGTCGAGG_L001_R1_001.fastq.gz      M.bP2-8-15_ACGCAACACA-CATTCAGGAG_L001_R1_001.fastq.gz       P1_H.m_19-27_221020_L002_R1.fastq.gz  P3_h.m_30-38_221020_L002_R1.fastq.gz
+    M.bP1-20-28_CATCAGGCGT-CGTGTTACCG_L001_R1_001.fastq.gz      M.bP2-9-16_AGGTATGAGA-GAACTCTTGT_L001_R1_001.fastq.gz       P1_H.m_21-29_221020_L002_R1.fastq.gz  P3_h.m_31-39_221020_L002_R1.fastq.gz
+    M.bP1-22-30_CTTACTCTCT-CTGCTTAAGG_L001_R1_001.fastq.gz      M.bP3-36-44_TCTAGGCATA-TGTGGAAGAT_L001_R1_001.fastq.gz      P1_H.m_24-32_221020_L002_R1.fastq.gz  P3_h.m_32-40_221020_L002_R1.fastq.gz
+    M.bP1-23_b-31_b_AAGGTGTTAG-TGTGCTGGTG_L001_R1_001.fastq.gz  M.bP3-37-46_GATCACGGTT-GCGATCCGTT_L001_R1_001.fastq.gz      P1_H.m_26-34_221020_L002_R1.fastq.gz  P3_h.m_33-41_221020_L002_R1.fastq.gz
+    M.bP1-2-4_TCGGACAACG-GTCTGGATGG_L001_R1_001.fastq.gz        M.bP3-38-45_GCCTCGATTA-ACGGCATGTA_L001_R1_001.fastq.gz      P2-10-17_221020_L002_R1.fastq.gz      P3_h.m_34-42_221020_L002_R1.fastq.gz
+    M.bP1-25-33_CAGGACCAAT-GCGGATATTA_L001_R1_001.fastq.gz      M.bP3-39_b-47_b_TGACATAGGT-TACCAGAGAT_L001_R1_001.fastq.gz  P2-11-18_221020_L002_R1.fastq.gz      P3_h.m_35-43_221020_L002_R1.fastq.gz
+    M.bP1-27-35_TCCGCGAGTA-CGCTGAATGC_L001_R1_001.fastq.gz      M.bP3-40-48_CCGCATTCCT-GCAACGAAGG_L001_R1_001.fastq.gz      P2-4-10_221020_L002_R1.fastq.gz   
+    M.bP1-3-6_CGACTAACGT-ATCAGCAGCA_L001_R1_001.fastq.gz        M.bP3-41-49_CGTAAGAGAA-GTACTCCAGG_L001_R1_001.fastq.gz      P2-44-51_221020_L002_R1.fastq.gz  
+    M.bP2-12-20_CGATGATAGC-TAGCCGTGAT_L001_R1_001.fastq.gz      M.bP3-42_b-50_b_GCAACATCAA-TGACCTAGTT_L001_R1_001.fastq.gz  P2-45-54_221020_L002_R1.fastq.gz  
+    M.bP2-13_b-21_b_TAGGAAGCGG-CCAATCCAGG_L001_R1_001.fastq.gz  M.bP3-43-52_CTAGAGTGAT-CTCAGGCAGT_L001_R1_001.fastq.gz      P2-46-53_221020_L002_R1.fastq.gz  
+    M.bP2-14-22_CCAGTGCACT-CCTCCGTATC_L001_R1_001.fastq.gz      P1_H.m_1_221020_L002_R1.fastq.gz                            P2-5-11_221020_L002_R1.fastq.gz   
+    M.bP2-47-55_GTTCTACGAA-CTACAGACAA_L001_R1_001.fastq.gz      P1_H.m_15-23_221020_L002_R1.fastq.gz                        P2-6-12_221020_L002_R1.fastq.gz   
+    M.bP2-48-56_CTAAGATCCT-AACACGAGCG_L001_R1_001.fastq.gz      P1_H.m_16-24_221020_L002_R1.fastq.gz                        P3_h.m_28-36_221020_L002_R1.fastq.gz
+    M.bP2-7-14_AGCTCACGAT-CCTCATCCGA_L001_R1_001.fastq.gz       P1_H.m_18-26_221020_L002_R1.fastq.gz                        P3_h.m_29-37_221020_L002_R1.fastq.gz
+)
+
+right_files=(
+    M.bP1-17-25_CCAATTAGGC-CATGTCGAGG_L001_R2_001.fastq.gz      M.bP2-8-15_ACGCAACACA-CATTCAGGAG_L001_R2_001.fastq.gz       P1_H.m_19-27_221020_L002_R2.fastq.gz  P3_h.m_30-38_221020_L002_R2.fastq.gz
+    M.bP1-20-28_CATCAGGCGT-CGTGTTACCG_L001_R2_001.fastq.gz      M.bP2-9-16_AGGTATGAGA-GAACTCTTGT_L001_R2_001.fastq.gz       P1_H.m_21-29_221020_L002_R2.fastq.gz  P3_h.m_31-39_221020_L002_R2.fastq.gz
+    M.bP1-22-30_CTTACTCTCT-CTGCTTAAGG_L001_R2_001.fastq.gz      M.bP3-36-44_TCTAGGCATA-TGTGGAAGAT_L001_R2_001.fastq.gz      P1_H.m_24-32_221020_L002_R2.fastq.gz  P3_h.m_32-40_221020_L002_R2.fastq.gz
+    M.bP1-23_b-31_b_AAGGTGTTAG-TGTGCTGGTG_L001_R2_001.fastq.gz  M.bP3-37-46_GATCACGGTT-GCGATCCGTT_L001_R2_001.fastq.gz      P1_H.m_26-34_221020_L002_R2.fastq.gz  P3_h.m_33-41_221020_L002_R2.fastq.gz
+    M.bP1-2-4_TCGGACAACG-GTCTGGATGG_L001_R2_001.fastq.gz        M.bP3-38-45_GCCTCGATTA-ACGGCATGTA_L001_R2_001.fastq.gz      P2-10-17_221020_L002_R2.fastq.gz      P3_h.m_34-42_221020_L002_R2.fastq.gz
+    M.bP1-25-33_CAGGACCAAT-GCGGATATTA_L001_R2_001.fastq.gz      M.bP3-39_b-47_b_TGACATAGGT-TACCAGAGAT_L001_R2_001.fastq.gz  P2-11-18_221020_L002_R2.fastq.gz      P3_h.m_35-43_221020_L002_R2.fastq.gz
+    M.bP1-27-35_TCCGCGAGTA-CGCTGAATGC_L001_R2_001.fastq.gz      M.bP3-40-48_CCGCATTCCT-GCAACGAAGG_L001_R2_001.fastq.gz      P2-4-10_221020_L002_R2.fastq.gz   
+    M.bP1-3-6_CGACTAACGT-ATCAGCAGCA_L001_R2_001.fastq.gz        M.bP3-41-49_CGTAAGAGAA-GTACTCCAGG_L001_R2_001.fastq.gz      P2-44-51_221020_L002_R2.fastq.gz  
+    M.bP2-12-20_CGATGATAGC-TAGCCGTGAT_L001_R2_001.fastq.gz      M.bP3-42_b-50_b_GCAACATCAA-TGACCTAGTT_L001_R2_001.fastq.gz  P2-45-54_221020_L002_R2.fastq.gz  
+    M.bP2-13_b-21_b_TAGGAAGCGG-CCAATCCAGG_L001_R2_001.fastq.gz  M.bP3-43-52_CTAGAGTGAT-CTCAGGCAGT_L001_R2_001.fastq.gz      P2-46-53_221020_L002_R2.fastq.gz  
+    M.bP2-14-22_CCAGTGCACT-CCTCCGTATC_L001_R2_001.fastq.gz      P1_H.m_1_221020_L002_R2.fastq.gz                            P2-5-11_221020_L002_R2.fastq.gz   
+    M.bP2-47-55_GTTCTACGAA-CTACAGACAA_L001_R2_001.fastq.gz      P1_H.m_15-23_221020_L002_R2.fastq.gz                        P2-6-12_221020_L002_R2.fastq.gz   
+    M.bP2-48-56_CTAAGATCCT-AACACGAGCG_L001_R2_001.fastq.gz      P1_H.m_16-24_221020_L002_R2.fastq.gz                        P3_h.m_28-36_221020_L002_R2.fastq.gz
+    M.bP2-7-14_AGCTCACGAT-CCTCATCCGA_L001_R2_001.fastq.gz       P1_H.m_18-26_221020_L002_R2.fastq.gz                        P3_h.m_29-37_221020_L002_R2.fastq.gz
+)
+
+# Loop through the read files and run Salmon quant
+for i in "${!left_files[@]}"; do
+    left_file="${left_files[i]}"
+    right_file="${right_files[i]}"
+
+    # Extract the sample name
+    sample=$(basename "$left_file" "_L002_R1.fastq.gz")
+
+    # Run Salmon quant with the current read files
+    # salmon quant -i index -l IU -1 lib_1_1.fq lib_2_1.fq -2 lib_1_2.fq lib_2_2.fq --validateMappings -o out
+    # -1 means left -2 means right
+    salmon quant -i "$salmon_index" -l IU -1 "$fastq_dir/$left_file" -2 "$fastq_dir/$right_file" --validateMappings -o "salmon_quant_out_allreads_mappedto_h.m/${sample}_quant"
+done
+
